@@ -1,1 +1,727 @@
-what is docker?
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Docker — Bilkul Basic Se</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0B1220;
+    --bg-panel:#121B2E;
+    --bg-panel-alt:#16213A;
+    --line:#24304A;
+    --line-soft:#1B2540;
+    --text:#E7ECF6;
+    --text-muted:#8B97AC;
+    --text-faint:#5C6A85;
+    --teal:#35D0B8;
+    --blue:#4FA8FF;
+    --amber:#F5A623;
+
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:inherit;}
+  html{scroll-behavior:smooth; scroll-padding-top:24px;}
+  body{
+    margin:0;
+    background:var(--bg-deep);
+    color:var(--text);
+    font-family:var(--font-body);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  a{color:var(--blue); text-decoration:none;}
+  a:hover{text-decoration:underline;}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--teal); outline-offset:3px; border-radius:2px;}
+
+  /* ---------- layout shell ---------- */
+  .shell{
+    max-width:1180px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:64px minmax(0,1fr);
+    gap:0;
+  }
+  @media (max-width:880px){
+    .shell{grid-template-columns:1fr;}
+  }
+
+  /* ---------- left rail (layer stack nav) ---------- */
+  .rail{
+    position:sticky;
+    top:0;
+    height:100vh;
+    padding-top:calc(40px + env(safe-area-inset-top,0px));
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+  @media (max-width:880px){ .rail{display:none;} }
+  .rail-line{
+    width:1px;
+    flex:1;
+    background:linear-gradient(var(--line-soft), var(--line-soft));
+    position:relative;
+    min-height:20px;
+  }
+  .rail-dot{
+    width:8px;height:8px;
+    border-radius:50%;
+    background:var(--bg-panel-alt);
+    border:1px solid var(--line);
+    flex:0 0 auto;
+    transition:background .15s ease, border-color .15s ease, transform .15s ease;
+  }
+  .rail-dot.is-active{
+    background:var(--teal);
+    border-color:var(--teal);
+    transform:scale(1.3);
+  }
+
+  /* ---------- main column ---------- */
+  main{padding:0 24px 120px; min-width:0;}
+  .content{max-width:720px; margin:0 auto;}
+
+  /* ---------- hero ---------- */
+  .hero{
+    max-width:760px;
+    margin:0 auto;
+    padding:72px 24px 56px;
+    text-align:left;
+  }
+  .crates{
+    display:flex;
+    align-items:flex-end;
+    gap:10px;
+    margin-bottom:34px;
+    height:86px;
+  }
+  .crate{
+    border-radius:5px;
+    border:1px solid var(--line);
+    position:relative;
+    overflow:hidden;
+  }
+  .crate::after{
+    content:'';
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(135deg, rgba(255,255,255,.03) 0 6px, transparent 6px 12px);
+  }
+  .crate-1{width:52px;height:40px; background:var(--bg-panel-alt); align-self:flex-end;}
+  .crate-2{width:52px;height:64px; background:#152238; border-color:#2A3A5C;}
+  .crate-3{width:52px;height:86px; background:linear-gradient(180deg,#173049,#122236); border-color:var(--teal); box-shadow:0 0 0 1px rgba(53,208,184,.15), 0 18px 40px -18px rgba(53,208,184,.5);}
+  .crate-4{width:52px;height:52px; background:var(--bg-panel-alt); align-self:flex-end;}
+  .crate-label{
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-faint);
+    position:absolute;
+    bottom:6px; left:0; right:0;
+    text-align:center;
+  }
+
+  .kicker{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--teal);
+    margin:0 0 14px;
+  }
+  h1.title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(34px, 5.4vw, 52px);
+    line-height:1.08;
+    margin:0 0 18px;
+    letter-spacing:-0.01em;
+  }
+  .title em{
+    font-style:normal;
+    color:var(--teal);
+  }
+  .hero-sub{
+    font-size:17px;
+    color:var(--text-muted);
+    max-width:56ch;
+    margin:0;
+  }
+
+  /* ---------- section ---------- */
+  section.step{
+    padding:56px 0;
+    border-top:1px solid var(--line-soft);
+    scroll-margin-top:28px;
+  }
+  section.step:first-of-type{border-top:none;}
+
+  .step-head{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    margin-bottom:18px;
+  }
+  .step-num{
+    font-family:var(--font-mono);
+    font-size:14px;
+    color:var(--text-faint);
+    flex:0 0 auto;
+    padding-top:3px;
+  }
+  h2{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:26px;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  h3{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:18px;
+    margin:28px 0 10px;
+    color:var(--text);
+  }
+  p{margin:0 0 16px; color:var(--text);}
+  p.muted{color:var(--text-muted);}
+  strong{color:var(--text); font-weight:600;}
+
+  .lede{
+    font-size:17px;
+    color:var(--text-muted);
+    margin-bottom:20px;
+  }
+  .lede strong{color:var(--teal);}
+
+  /* callout / analogy box */
+  .callout{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--teal);
+    border-radius:6px;
+    padding:16px 18px;
+    margin:18px 0;
+    font-size:15px;
+    color:var(--text-muted);
+  }
+  .callout strong{color:var(--text);}
+
+  /* code blocks */
+  .code-block{
+    background:#0D1526;
+    border:1px solid var(--line);
+    border-radius:8px;
+    margin:16px 0;
+    overflow:hidden;
+  }
+  .code-block .bar{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    padding:9px 14px;
+    border-bottom:1px solid var(--line-soft);
+    background:var(--bg-panel);
+  }
+  .code-block .bar span{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--line);
+  }
+  .code-block .bar .tag{
+    margin-left:auto;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-faint);
+  }
+  .code-block pre{
+    margin:0;
+    padding:16px 18px;
+    overflow-x:auto;
+    font-family:var(--font-mono);
+    font-size:14px;
+    line-height:1.65;
+    color:#CFE8E2;
+  }
+  .code-block code{font-family:inherit;}
+  .code-block .out{color:var(--text-faint);}
+  .code-block .cmt{color:var(--text-faint);}
+
+  code.inline{
+    font-family:var(--font-mono);
+    font-size:0.88em;
+    background:var(--bg-panel);
+    border:1px solid var(--line-soft);
+    padding:2px 6px;
+    border-radius:4px;
+    color:#CFE8E2;
+  }
+
+  /* diagram (arrow flow) */
+  .flow{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    margin:18px 0;
+  }
+  .flow-item{
+    font-family:var(--font-mono);
+    font-size:14px;
+    padding:10px 14px;
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--text);
+    width:fit-content;
+  }
+  .flow-arrow{
+    font-family:var(--font-mono);
+    color:var(--text-faint);
+    padding:2px 0 2px 20px;
+    font-size:14px;
+  }
+
+  /* comparison table */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    margin:18px 0;
+    font-size:15px;
+  }
+  th, td{
+    text-align:left;
+    padding:12px 14px;
+    border-bottom:1px solid var(--line-soft);
+  }
+  th{
+    font-family:var(--font-display);
+    font-weight:600;
+    color:var(--teal);
+    font-size:14px;
+  }
+  td{color:var(--text-muted);}
+  tr:last-child td{border-bottom:none;}
+
+  .blueprint-row{
+    display:flex;
+    gap:14px;
+    margin:20px 0 6px;
+    flex-wrap:wrap;
+  }
+  .blueprint-card{
+    flex:1 1 220px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px 18px;
+    background:var(--bg-panel);
+  }
+  .blueprint-card .ic{font-size:22px; margin-bottom:8px; display:block;}
+  .blueprint-card h4{
+    font-family:var(--font-display);
+    margin:0 0 4px;
+    font-size:16px;
+    color:var(--text);
+  }
+  .blueprint-card p{margin:0; font-size:14px; color:var(--text-muted);}
+
+  /* port mapping visual */
+  .port-map{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    margin:22px 0 8px;
+    flex-wrap:wrap;
+  }
+  .port-box{
+    border:1px solid var(--line);
+    background:var(--bg-panel);
+    border-radius:8px;
+    padding:14px 20px;
+    text-align:center;
+  }
+  .port-box .n{font-family:var(--font-mono); font-size:20px; color:var(--teal);}
+  .port-box .l{font-size:12px; color:var(--text-faint); margin-top:2px;}
+  .port-arrow{
+    font-family:var(--font-mono);
+    color:var(--text-faint);
+    font-size:13px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2px;
+  }
+  .port-arrow .line{width:60px; height:1px; background:var(--line); position:relative;}
+  .port-arrow .line::after{
+    content:'';
+    position:absolute; right:0; top:-3px;
+    border-left:6px solid var(--text-faint);
+    border-top:3px solid transparent;
+    border-bottom:3px solid transparent;
+  }
+
+  /* command grid for cheat sheet */
+  .cmd-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(210px,1fr));
+    gap:10px;
+    margin:20px 0;
+  }
+  .cmd-chip{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:12px 14px;
+  }
+  .cmd-chip .c{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:14px;
+    color:var(--teal);
+    margin-bottom:4px;
+  }
+  .cmd-chip .d{
+    font-size:12.5px;
+    color:var(--text-faint);
+  }
+
+  /* roadmap layered list */
+  .roadmap{
+    list-style:none;
+    margin:18px 0 0;
+    padding:0;
+    border-left:1px solid var(--line);
+    margin-left:6px;
+  }
+  .roadmap li{
+    position:relative;
+    padding:0 0 22px 26px;
+    font-family:var(--font-mono);
+    font-size:14.5px;
+    color:var(--text-muted);
+  }
+  .roadmap li::before{
+    content:'';
+    position:absolute;
+    left:-4.5px; top:5px;
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--bg-deep);
+    border:1px solid var(--text-faint);
+  }
+  .roadmap li.now::before{
+    background:var(--teal);
+    border-color:var(--teal);
+    box-shadow:0 0 0 4px rgba(53,208,184,.15);
+  }
+  .roadmap li.now{color:var(--text);}
+  .roadmap li.skip{color:var(--text-faint); text-decoration:line-through; text-decoration-color:var(--line);}
+  .roadmap li span.tag{
+    font-family:var(--font-body);
+    font-size:11px;
+    color:var(--teal);
+    margin-left:10px;
+  }
+
+  .note-amber{
+    border-left-color:var(--amber);
+  }
+  .note-amber strong{color:var(--amber);}
+
+  footer{
+    max-width:720px;
+    margin:0 auto;
+    padding:40px 24px 100px;
+    color:var(--text-faint);
+    font-size:13px;
+    border-top:1px solid var(--line-soft);
+    margin-top:20px;
+  }
+
+  @media (max-width:600px){
+    .hero{padding:52px 20px 40px;}
+    main{padding:0 18px 100px;}
+    .step-head{gap:10px;}
+    h2{font-size:22px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="rail" aria-hidden="true">
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s1"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s2"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s3"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s4"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s5"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s6"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s7"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s8"></div>
+    <div class="rail-line"></div>
+    <div class="rail-dot" data-for="s9"></div>
+    <div class="rail-line"></div>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="crates" aria-hidden="true">
+        <div class="crate crate-1"></div>
+        <div class="crate crate-2"></div>
+        <div class="crate crate-3"><span class="crate-label">run</span></div>
+        <div class="crate crate-4"></div>
+      </div>
+      <p class="kicker">docker — zero se shuru</p>
+      <h1 class="title">Docker ko <em>bilkul basic</em> se samjho</h1>
+      <p class="hero-sub">Ek container shipping yard ki tarah — har application apne isolated box me packed hoti hai, apni dependencies ke saath, kahin bhi same tarah chalne ke liye. Yahan se shuru karo.</p>
+    </div>
+
+    <div class="content">
+
+      <section class="step" id="s1">
+        <div class="step-head"><span class="step-num">01</span><h2>Docker kya hai?</h2></div>
+        <p class="lede"><strong>Docker</strong> ek tool/platform hai jo application ko ek isolated environment — yaani <strong>container</strong> — ke andar run karta hai.</p>
+        <div class="callout">
+          Aapke laptop par Python version, libraries aur configuration alag hain, aur kisi doosre computer par alag. Docker application ke saath uski required dependencies ko package karke same environment me run karne me help karta hai.
+        </div>
+      </section>
+
+      <section class="step" id="s2">
+        <div class="step-head"><span class="step-num">02</span><h2>Container kya hai?</h2></div>
+        <p><strong>Container</strong> = application run hone ka isolated environment. Containers lightweight hote hain, aur ek hi machine par multiple containers ek saath run ho sakte hain.</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">your laptop</div></div>
+          <pre><code>Your Laptop
+  └── Docker
+        ├── Container 1  →  Python App
+        ├── Container 2  →  MySQL
+        └── Container 3  →  Nginx</code></pre>
+        </div>
+      </section>
+
+      <section class="step" id="s3">
+        <div class="step-head"><span class="step-num">03</span><h2>Docker Image kya hai?</h2></div>
+        <p>Image ek <strong>template/package</strong> hoti hai jisse container create hota hai.</p>
+        <div class="flow">
+          <div class="flow-item">Docker Image</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">Container</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">Running Application</div>
+        </div>
+        <p class="muted">Pehle Python ki image download karo:</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">terminal</div></div>
+          <pre><code>docker pull python</code></pre>
+        </div>
+        <p class="muted">Phir usi image se container run karo:</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">terminal</div></div>
+          <pre><code>docker run python</code></pre>
+        </div>
+
+        <h3>Image vs Container</h3>
+        <table>
+          <thead><tr><th>Image</th><th>Container</th></tr></thead>
+          <tbody>
+            <tr><td>Template hai</td><td>Running instance hai</td></tr>
+            <tr><td>Usually read-only base</td><td>Isme application run hoti hai</td></tr>
+            <tr><td>Image se container banta hai</td><td>Container image se banta hai</td></tr>
+            <tr><td><code class="inline">python:3.12</code></td><td>Python ka running container</td></tr>
+          </tbody>
+        </table>
+
+        <div class="blueprint-row">
+          <div class="blueprint-card">
+            <span class="ic">🏗️</span>
+            <h4>Image</h4>
+            <p>Blueprint — sirf design, kuch bhi chal nahi raha.</p>
+          </div>
+          <div class="blueprint-card">
+            <span class="ic">🏠</span>
+            <h4>Container</h4>
+            <p>Blueprint se bana hua actual, running house.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="step" id="s4">
+        <div class="step-head"><span class="step-num">04</span><h2>Docker Hub kya hai?</h2></div>
+        <p>Docker Hub ek public registry hai jahan Docker images available hoti hain — <a href="https://hub.docker.com" target="_blank" rel="noopener">hub.docker.com</a>.</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">terminal</div></div>
+          <pre><code>docker pull nginx</code></pre>
+        </div>
+        <p class="muted">Docker Hub se <code class="inline">nginx</code> image download ho jayegi.</p>
+      </section>
+
+      <section class="step" id="s5">
+        <div class="step-head"><span class="step-num">05</span><h2>Basic Docker Commands</h2></div>
+
+        <h3>Docker installed hai ya nahi</h3>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">powershell / cmd</div></div>
+          <pre><code>docker --version
+<span class="out">Docker version 28.x.x</span></code></pre>
+        </div>
+
+        <h3>Docker running hai ya nahi</h3>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">terminal</div></div>
+          <pre><code>docker info</code></pre>
+        </div>
+
+        <div class="cmd-grid">
+          <div class="cmd-chip"><span class="c">docker images</span><span class="d">saari downloaded images dekho</span></div>
+          <div class="cmd-chip"><span class="c">docker ps</span><span class="d">running containers dekho</span></div>
+          <div class="cmd-chip"><span class="c">docker ps -a</span><span class="d">saare containers dekho (stopped bhi)</span></div>
+          <div class="cmd-chip"><span class="c">docker pull nginx</span><span class="d">image download karo</span></div>
+          <div class="cmd-chip"><span class="c">docker run nginx</span><span class="d">container run karo</span></div>
+          <div class="cmd-chip"><span class="c">docker run -d nginx</span><span class="d">background me run karo</span></div>
+          <div class="cmd-chip"><span class="c">docker stop ID</span><span class="d">container stop karo</span></div>
+          <div class="cmd-chip"><span class="c">docker rm ID</span><span class="d">container remove karo</span></div>
+          <div class="cmd-chip"><span class="c">docker rmi nginx</span><span class="d">image remove karo</span></div>
+        </div>
+        <p class="muted">Container stop karne se pehle <code class="inline">docker ps</code> se uska Container ID dekh lo.</p>
+      </section>
+
+      <section class="step" id="s6">
+        <div class="step-head"><span class="step-num">06</span><h2>Port kya hota hai?</h2></div>
+        <p>Suppose Docker container ke andar web application <strong>port 80</strong> par chal rahi hai. Aap apne laptop ke port <code class="inline">8080</code> ko container ke port <code class="inline">80</code> se connect kar sakte ho:</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">terminal</div></div>
+          <pre><code>docker run -d -p 8080:80 nginx</code></pre>
+        </div>
+        <div class="port-map">
+          <div class="port-box"><div class="n">8080</div><div class="l">laptop</div></div>
+          <div class="port-arrow"><div class="line"></div></div>
+          <div class="port-box"><div class="n">80</div><div class="l">container</div></div>
+        </div>
+        <p class="muted">Browser me <code class="inline">http://localhost:8080</code> open karoge to Nginx application dikhegi.</p>
+      </section>
+
+      <section class="step" id="s7">
+        <div class="step-head"><span class="step-num">07</span><h2>Dockerfile kya hai?</h2></div>
+        <p><strong>Dockerfile</strong> ek file hoti hai jisme hum define karte hain ki apni application ki Docker image kaise banani hai.</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">Dockerfile</div></div>
+          <pre><code><span class="cmt">FROM</span> python:3.12
+
+<span class="cmt">WORKDIR</span> /app
+
+<span class="cmt">COPY</span> . .
+
+<span class="cmt">RUN</span> pip install -r requirements.txt
+
+<span class="cmt">CMD</span> ["python", "app.py"]</code></pre>
+        </div>
+        <p class="muted">Image build karo:</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">terminal</div></div>
+          <pre><code>docker build -t myapp .</code></pre>
+        </div>
+        <p class="muted">Phir container run karo:</p>
+        <div class="code-block">
+          <div class="bar"><span></span><span></span><span></span><div class="tag">terminal</div></div>
+          <pre><code>docker run myapp</code></pre>
+        </div>
+
+        <h3>Poora flow</h3>
+        <div class="flow">
+          <div class="flow-item">Application</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">Dockerfile</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">docker build</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">Docker Image</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">docker run</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">Container</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-item">Application Running</div>
+        </div>
+      </section>
+
+      <section class="step" id="s8">
+        <div class="step-head"><span class="step-num">08</span><h2>Aapko abhi kya-kya seekhna hai?</h2></div>
+        <p class="muted">Current level ke liye Docker ka basic roadmap — jo abhi seekhna hai woh highlight hai, jo baad ke liye hai woh mute:</p>
+        <ul class="roadmap">
+          <li class="now">Docker kya hai <span class="tag">done ✓</span></li>
+          <li class="now">Image</li>
+          <li class="now">Container</li>
+          <li class="now">Docker Hub</li>
+          <li class="now">Basic Commands</li>
+          <li class="now">Port Mapping</li>
+          <li class="now">Dockerfile</li>
+          <li class="now">docker build</li>
+          <li class="now">docker run</li>
+          <li>Docker Compose <span class="tag">next</span></li>
+        </ul>
+        <div class="callout note-amber">
+          <strong>Abhi zarurat nahi:</strong> Kubernetes, Docker Swarm, advanced networking — ye sab baad me.
+        </div>
+      </section>
+
+      <section class="step" id="s9">
+        <div class="step-head"><span class="step-num">09</span><h2>Sabse important 6 commands</h2></div>
+        <div class="cmd-grid">
+          <div class="cmd-chip"><span class="c">docker --version</span><span class="d">version check</span></div>
+          <div class="cmd-chip"><span class="c">docker pull</span><span class="d">image download</span></div>
+          <div class="cmd-chip"><span class="c">docker images</span><span class="d">images list</span></div>
+          <div class="cmd-chip"><span class="c">docker run</span><span class="d">container start</span></div>
+          <div class="cmd-chip"><span class="c">docker ps</span><span class="d">running containers</span></div>
+          <div class="cmd-chip"><span class="c">docker stop</span><span class="d">container stop</span></div>
+        </div>
+        <p>In commands ko practically use karna seekh jao, phir <strong>Dockerfile + apni Python/Flask application ko Docker me run karna</strong> next step hoga.</p>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<footer>
+  Docker basics — apne pace par revise karne ke liye banaya gaya guide.
+</footer>
+
+<script>
+  // Highlight the active layer dot in the left rail as the reader scrolls.
+  (function(){
+    var dots = Array.prototype.slice.call(document.querySelectorAll('.rail-dot'));
+    if(!dots.length) return;
+    var sections = dots.map(function(d){ return document.getElementById(d.getAttribute('data-for')); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var idx = sections.indexOf(entry.target);
+        if(idx === -1) return;
+        if(entry.isIntersecting){
+          dots.forEach(function(d){ d.classList.remove('is-active'); });
+          dots[idx].classList.add('is-active');
+        }
+      });
+    }, { rootMargin: '-40% 0px -50% 0px', threshold: 0 });
+    sections.forEach(function(s){ if(s) io.observe(s); });
+  })();
+</script>
+</body>
+</html>
